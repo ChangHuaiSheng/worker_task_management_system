@@ -25,11 +25,11 @@ CREATE TABLE `wtms_db`.`workers` (
 UNIQUE (`email`)
 ) ENGINE = InnoDB;
 
-#PHP API Backend
+# PHP API Backend
 
 Copy the wtms folder in 
 https://github.com/ChangHuaiSheng/worker_task_management_system/tree/main/wtms/wtms/php
 and paste it in your XAMPP's htdocs folder 
 
-#Run App
+# Run App
 You can use Android Studio Emulator or any External Devices to test the app 
