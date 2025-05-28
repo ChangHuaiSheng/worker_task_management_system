@@ -3,6 +3,7 @@ import 'package:worker_task_management_system/view/loginscreen.dart';
 import 'package:worker_task_management_system/model/user.dart';
 import 'package:worker_task_management_system/view/registerscreen.dart';
 import 'package:worker_task_management_system/view/profilepage.dart';
+import 'package:worker_task_management_system/view/tasklistpage.dart';
 
 class MainScreen extends StatefulWidget {
   final User user;
@@ -17,14 +18,14 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Main Screen",style: TextStyle(color: Colors.white),),
+        title: const Text("Main Screen", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 52, 119, 219),
-        leading: IconButton(  // Add IconButton here
+        leading: IconButton(
           icon: const Icon(Icons.person, color: Colors.white),
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => ProfilePage(user: widget.user)), // Pass the user data
+              MaterialPageRoute(builder: (context) => ProfilePage(user: widget.user)),
             );
           },
         ),
@@ -40,9 +41,29 @@ class _MainScreenState extends State<MainScreen> {
         ],
       ),
       body: Center(
-        child: Text(
-          "Welcome ${widget.user.userName}",
-          style: const TextStyle(fontSize: 24, color: Colors.blue),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Welcome ${widget.user.userName}",
+              style: const TextStyle(fontSize: 24, color: Colors.blue),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => TaskListPage(user: widget.user)),
+                );
+              },
+              icon: const Icon(Icons.task),
+              label: const Text("View My Tasks"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -52,10 +73,10 @@ class _MainScreenState extends State<MainScreen> {
               context,
               MaterialPageRoute(builder: (context) => const RegisterScreen()),
             );
-          }else{
+          } else {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Add new product screen later"),
-          ));
+              content: Text("Add new product screen later"),
+            ));
           }
         },
         backgroundColor: const Color.fromARGB(255, 52, 119, 219),

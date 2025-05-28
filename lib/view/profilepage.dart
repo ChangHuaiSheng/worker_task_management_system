@@ -130,7 +130,7 @@ class _ProfilePageState extends State<ProfilePage> { //controller for each profi
   http.post( //send POST request to update the profile on the server
     Uri.parse("${MyConfig.myurl}/wtms/php/update_profile.php"),
     body: {
-      "id": widget.user.userId ?? "",
+      "worker_id": widget.user.userId ?? "",
       "full_name": fullName,
       "email": email,
       "phone": phone,

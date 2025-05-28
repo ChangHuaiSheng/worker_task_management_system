@@ -15,7 +15,7 @@ class User { //user properties
       this.userAddress});
 
   User.fromJson(Map<String, dynamic> json) {  //named constructor to create a user object from json
-    userId = json['id'];
+    userId = json['worker_id'];
     userName = json['full_name'];
     userEmail = json['email'];
     userPassword = json['password'];
@@ -25,7 +25,7 @@ class User { //user properties
 
   Map<String, dynamic> toJson() { //convert the user object into a JSON map
     final Map<String, dynamic> data = <String, dynamic>{};
-    data['id'] = userId;
+    data['worker_id'] = userId;
     data['full_name'] = userName;
     data['email'] = userEmail;
     data['password'] = userPassword;
