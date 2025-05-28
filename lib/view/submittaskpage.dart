@@ -5,9 +5,10 @@ import 'package:worker_task_management_system/model/user.dart';
 import 'package:worker_task_management_system/model/work.dart';
 import 'package:worker_task_management_system/myconfig.dart';
 
+// Page to allow a user to submit work for a task
 class SubmitTaskPage extends StatefulWidget {
-  final User user;
-  final Work task;
+  final User user; // Logged-in user
+  final Work task; // Task to be submitted
 
   const SubmitTaskPage({
     Key? key,
@@ -21,23 +22,29 @@ class SubmitTaskPage extends StatefulWidget {
 
 class _SubmitTaskPageState extends State<SubmitTaskPage> {
   final TextEditingController _submissionController = TextEditingController();
-  bool _isSubmitting = false;
+  bool _isSubmitting = false; // Tracks if the submission is in progress
 
+  // Function to handle the submission of a task
   Future<void> _submitTask() async {
     final workId = widget.task.workId;
     final workerId = widget.user.userId ?? '0';
     final submissionText = _submissionController.text.trim();
 
+    // Validate the submission input
     if (submissionText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter submission text.')),
+        const SnackBar(
+          content: Text('Please enter submission text.'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    setState(() => _isSubmitting = true); // Show loading spinner
 
     try {
+      // Send POST request to submit work
       final response = await http.post(
         Uri.parse("${MyConfig.myurl}/wtms/php/submit_work.php"),
         body: {
@@ -50,21 +57,32 @@ class _SubmitTaskPageState extends State<SubmitTaskPage> {
       final decoded = json.decode(response.body);
       setState(() => _isSubmitting = false);
 
+      // If submission successful
       if (decoded['status'] == 'success') {
-        // Return true to refresh tasks
-        Navigator.pop(context, true);
+        Navigator.pop(context, true); // Return to task list and trigger refresh
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(decoded['message'] ?? 'Submission successful')),
+          SnackBar(
+            content: Text(decoded['message'] ?? 'Submission successful'),
+            backgroundColor: Colors.green,
+          ),
         );
       } else {
+        // Submission failed response
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(decoded['message'] ?? 'Submission failed')),
+          SnackBar(
+            content: Text(decoded['message'] ?? 'Submission failed'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
       setState(() => _isSubmitting = false);
+      // Network or server error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -82,8 +100,14 @@ class _SubmitTaskPageState extends State<SubmitTaskPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Task: ${widget.task.title}', style: const TextStyle(fontSize: 18)),
+            // Display the task title
+            Text(
+              'Task: ${widget.task.title}',
+              style: const TextStyle(fontSize: 18),
+            ),
             const SizedBox(height: 20),
+
+            // Text field for entering submission text
             TextField(
               controller: _submissionController,
               maxLines: 5,
@@ -93,6 +117,8 @@ class _SubmitTaskPageState extends State<SubmitTaskPage> {
               ),
             ),
             const SizedBox(height: 20),
+
+            // Submit button or loading spinner
             ElevatedButton(
               onPressed: _isSubmitting ? null : _submitTask,
               child: _isSubmitting

@@ -6,6 +6,7 @@ import 'package:worker_task_management_system/model/user.dart';
 import 'package:worker_task_management_system/model/work.dart';
 import 'package:worker_task_management_system/myconfig.dart';
 
+// This widget displays a list of tasks assigned to a specific user (worker)
 class TaskListPage extends StatefulWidget {
   final User user;
 
@@ -16,31 +17,40 @@ class TaskListPage extends StatefulWidget {
 }
 
 class _TaskListPageState extends State<TaskListPage> {
-  List<dynamic> tasks = [];
-  bool isLoading = true;
+  List<dynamic> tasks = [];      // List to hold fetched task data
+  bool isLoading = true;         // Flag to indicate loading state
 
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    _loadTasks();               // Fetch tasks when the page is initialized
   }
 
+  // Function to fetch tasks for the current user
   Future<void> _loadTasks() async {
     final userId = widget.user.userId;
 
+    // Validate the user ID before making the API call
     if (userId == null || userId == '0') {
       print("Invalid user ID: $userId");
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid user ID. Cannot load tasks.')),
-        );
-      });
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(
+             content: Text(
+              'Invalid user ID. Cannot load tasks.',
+               style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
       setState(() {
         isLoading = false;
       });
       return;
     }
 
+    // Try to load tasks from the backend
     try {
       final response = await http.post(
         Uri.parse("${MyConfig.myurl}/wtms/php/get_works.php"),
@@ -62,7 +72,10 @@ class _TaskListPageState extends State<TaskListPage> {
       print("Error loading tasks: $e");
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       });
       setState(() {
@@ -80,20 +93,24 @@ class _TaskListPageState extends State<TaskListPage> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: isLoading
+          // Show loading spinner while data is being fetched
           ? const Center(child: CircularProgressIndicator())
+          // Show message if no tasks are found
           : tasks.isEmpty
               ? const Center(child: Text("No tasks found."))
+              // Display list of tasks
               : ListView.builder(
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     final taskMap = tasks[index];
-                    final workTask = Work.fromJson(taskMap);
+                    final workTask = Work.fromJson(taskMap); // Convert map to Work object
 
+                    // Determine if the task is already completed
                     final isCompleted = workTask.status == 'success' || workTask.status == 'completed';
 
                     return Card(
                       margin: const EdgeInsets.all(10),
-                      color: isCompleted ? Colors.grey[200] : Colors.white,
+                      color: isCompleted ? Colors.grey[200] : Colors.white, // Grey out completed tasks
                       child: ListTile(
                         title: Text(
                           workTask.title ?? 'No Title',
@@ -109,9 +126,11 @@ class _TaskListPageState extends State<TaskListPage> {
                             Text("Status: ${workTask.status ?? 'unknown'}"),
                           ],
                         ),
+                        // Disable tap if task is completed
                         onTap: isCompleted
                             ? null
                             : () async {
+                                // Navigate to submission page
                                 final result = await Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -122,8 +141,9 @@ class _TaskListPageState extends State<TaskListPage> {
                                   ),
                                 );
 
+                                // If submission was successful, refresh the task list
                                 if (result == true) {
-                                  _loadTasks(); // Reload tasks on return
+                                  _loadTasks();
                                 }
                               },
                       ),
@@ -133,3 +153,4 @@ class _TaskListPageState extends State<TaskListPage> {
     );
   }
 }
+
