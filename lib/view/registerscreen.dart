@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:worker_task_management_system/myconfig.dart';
 import 'package:worker_task_management_system/view/loginscreen.dart';
-import 'package:image_picker/image_picker.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -15,297 +15,204 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  //controller for form fields
-  TextEditingController nameController = TextEditingController();
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  TextEditingController confirmPasswordController = TextEditingController();
-  TextEditingController phoneController = TextEditingController();
-  TextEditingController addressController = TextEditingController();
-  File? _image;  //image variables
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+
+  File? _image;
   Uint8List? webImageBytes;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text("Register Screen",style: TextStyle(color: Colors.white),),
-          backgroundColor: const Color.fromARGB(255, 52, 119, 219),
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
-        body: Center(
-            child: SingleChildScrollView(
+      appBar: AppBar(
+        title: const Text("Register Screen", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 52, 119, 219),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Center(
+        child: SingleChildScrollView(
           child: Container(
             margin: const EdgeInsets.all(16.0),
             child: Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  children: [ //profile image picker container
+                  children: [
                     GestureDetector(
-                      onTap: () {
-                        showSelectionDialog();
-                      },
-                      child: Container(
-                        height: 300,
-                        width: 400,
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: _image == null
-                              ? const AssetImage("assets/images/camera.png")
-                              : _buildProfileImage(),
-                          fit: BoxFit.cover,
-                        )),
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundColor: Colors.grey.shade300,
+                        backgroundImage: _image != null
+                            ? (kIsWeb ? MemoryImage(webImageBytes!) : FileImage(_image!)) as ImageProvider
+                            : const AssetImage("assets/images/profile.png"),
+                        child: _image == null
+                            ? const Icon(Icons.camera_alt, size: 40, color: Colors.white)
+                            : null,
                       ),
                     ),
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: "Your Name",
-                      ),
-                      keyboardType: TextInputType.text,
-                    ),
-                    TextField(
-                      controller: emailController,
-                      decoration: const InputDecoration(
-                        labelText: "Email",
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    TextField(
-                      controller: passwordController,
-                      decoration: const InputDecoration(
-                        labelText: "Password",
-                      ),
-                      obscureText: true,
-                    ),
-                    TextField(
-                      controller: confirmPasswordController,
-                      decoration: const InputDecoration(
-                        labelText: "Re-enter Password",
-                      ),
-                      obscureText: true,
-                    ),
-                    TextField(
-                      controller: phoneController,
-                      decoration: const InputDecoration(
-                        labelText: "Phone",
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
-                    TextField(
-                      controller: addressController,
-                      decoration: const InputDecoration(
-                        labelText: "Address",
-                      ),
-                      keyboardType: TextInputType.text,
-                      maxLines: 5,
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField("Your Name", nameController),
+                    _buildTextField("Email", emailController, inputType: TextInputType.emailAddress),
+                    _buildTextField("Password", passwordController, obscureText: true),
+                    _buildTextField("Re-enter Password", confirmPasswordController, obscureText: true),
+                    _buildTextField("Phone", phoneController, inputType: TextInputType.phone),
+                    _buildTextField("Address", addressController, maxLines: 3),
+                    const SizedBox(height: 20),
                     SizedBox(
-                        width: 400,
-                        child: ElevatedButton(
-                          onPressed: registerUserDialog,
-                          child: const Text("Register"),
-                        ))
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.check),
+                        onPressed: registerUserDialog,
+                        label: const Text("Register"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 52, 119, 219),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    )
                   ],
                 ),
               ),
             ),
           ),
-        )));
+        ),
+      ),
+    );
   }
 
-  void registerUserDialog() { //dialog box for confirm registration
-    String name = nameController.text;
-    String email = emailController.text;
+  Widget _buildTextField(String label, TextEditingController controller,
+      {bool obscureText = false, int maxLines = 1, TextInputType inputType = TextInputType.text}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: inputType,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        ),
+      ),
+    );
+  }
+
+  void registerUserDialog() {
+    String name = nameController.text.trim();
+    String email = emailController.text.trim();
     String password = passwordController.text;
     String confirmPassword = confirmPasswordController.text;
-    String phone = phoneController.text;
-    String address = addressController.text;
+    String phone = phoneController.text.trim();
+    String address = addressController.text.trim();
 
-    //email format check (contains '@' and '.')
     bool isValidEmail(String email) {
-      return email.contains('@') && email.contains('.') && email.indexOf('@') < email.lastIndexOf('.');
+      return RegExp(r"^[^@]+@[^@]+\.[^@]+").hasMatch(email);
     }
 
-    if (name.isEmpty ||  //validation check
-        email.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty ||
-        phone.isEmpty ||
-        address.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text("Please fill all fields"),
-          backgroundColor: Colors.red,
-        ));
+    if ([name, email, password, confirmPassword, phone, address].any((element) => element.isEmpty)) {
+      _showSnack("Please fill all fields", isError: true);
+      return;
+    }
+    if (!isValidEmail(email)) {
+      _showSnack("Please enter a valid email address", isError: true);
+      return;
+    }
+    if (password.length < 6) {
+      _showSnack("Password must be at least 6 characters", isError: true);
+      return;
+    }
+    if (password != confirmPassword) {
+      _showSnack("Passwords do not match", isError: true);
       return;
     }
 
-    if (!isValidEmail(email)) { //email format validation check
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Please enter a valid email address"),
-        backgroundColor: Colors.red,
-      ));
-    return;
-    }
-
-     
-    if (password.length < 6) { // Password length validation
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password must be at least 6 characters"),
-        backgroundColor: Colors.red,
-      ));
-    return;
-    }
-    if (password != confirmPassword) { //password validation check
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Passwords do not match"),
-        backgroundColor: Colors.red,
-      ));
-      return;
-    }
-
-    showDialog( //confirmation dialog
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("Register this account?"),
-            content: const Text("Are you sure?"),
-            actions: [
-              TextButton(
-                child: const Text("Ok"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  registerUser();
-                },
-              ),
-              TextButton(
-                child: const Text("Cancel"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        });
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Register this account?"),
+          content: const Text("Are you sure?"),
+          actions: [
+            TextButton(
+              child: const Text("Ok"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                registerUser();
+              },
+            ),
+            TextButton(
+              child: const Text("Cancel"),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  void registerUser() { //API call to register user
-    String name = nameController.text;
-    String email = emailController.text;
+  void registerUser() async {
+    String name = nameController.text.trim();
+    String email = emailController.text.trim();
     String password = passwordController.text;
-    String phone = phoneController.text;
-    String address = addressController.text;
+    String phone = phoneController.text.trim();
+    String address = addressController.text.trim();
+    String? base64Image;
 
-    http.post(Uri.parse("${MyConfig.myurl}/wtms/php/register_worker.php"),
+    if (_image != null) {
+      final bytes = kIsWeb ? webImageBytes! : await _image!.readAsBytes();
+      base64Image = base64Encode(bytes);
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse("${MyConfig.myurl}/wtms/php/register_worker.php"),
         body: {
           "name": name,
           "email": email,
           "password": password,
           "phone": phone,
           "address": address,
-        }).then((response) {
-      print(response.body);
-      if (response.statusCode == 200) {
-        var jsondata = json.decode(response.body);
-        if (jsondata['status'] == 'success') {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Success!"),
-            backgroundColor: Colors.green,
-          ));
-          Navigator.of(context).pop();
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Failed to register"),
-            backgroundColor: Colors.red,
-          ));
-        }
-      }
-    });
-  }
+          if (base64Image != null) "image": base64Image,
+        },
+      );
 
-  void showSelectionDialog() { //show dialog to pick image source
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        // return object of type Dialog
-        return AlertDialog(
-            title: const Text(
-              "Select from",
-              style: TextStyle(),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _selectFromCamera();
-                    },
-                    child: const Text("From Camera")),
-                TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _selectfromGallery();
-                    },
-                    child: const Text("From Gallery"))
-              ],
-            ));
-      },
-    );
-  }
-
-  Future<void> _selectFromCamera() async { // capture image using camera
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
-      maxHeight: 800,
-      maxWidth: 800,
-    );
-
-    if (pickedFile != null) {
-      _image = File(pickedFile.path);
-      if (kIsWeb) {
-        // Read image bytes for web.
-        webImageBytes = await pickedFile.readAsBytes();
-      }
-      setState(() {});
-    } else {
-      print('No image selected.');
-    }
-  }
-
-  Future<void> _selectfromGallery() async { //select image from gallery
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxHeight: 800,
-      maxWidth: 800,
-    );
-
-    if (pickedFile != null) {
-      _image = File(pickedFile.path);
-      setState(() {});
-    }
-  }
-
-  ImageProvider _buildProfileImage() {
-    if (_image != null) {
-      if (kIsWeb) {
-        // For web, use MemoryImage.
-        return MemoryImage(webImageBytes!);
+      final jsondata = json.decode(response.body);
+      if (jsondata['status'] == 'success') {
+        _showSnack("Success!", isError: false);
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
       } else {
-        // For mobile, convert XFile to File.
-        return FileImage(File(_image!.path));
+        _showSnack("Failed to register: ${jsondata['message'] ?? 'Unknown error'}", isError: true);
       }
+    } catch (e) {
+      _showSnack("Error: $e", isError: true);
     }
-    return const AssetImage('assets/images/profile.png');
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: isError ? Colors.red : Colors.green),
+    );
+  }
+
+  void _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      if (kIsWeb) {
+        webImageBytes = await pickedFile.readAsBytes();
+      } else {
+        _image = File(pickedFile.path);
+      }
+      setState(() {}); // Update UI after selecting image
+    }
   }
 }

@@ -1,36 +1,40 @@
-class User { //user properties
+// user.dart (model)
+class User {
   String? userId;
   String? userName;
   String? userEmail;
   String? userPassword;
   String? userPhone;
   String? userAddress;
+  String? userImage; // base64 image
 
-  User( //constructor with named optional parameters
-      {this.userId,
-      this.userName,
-      this.userEmail,
-      this.userPassword,
-      this.userPhone,
-      this.userAddress});
+  User({
+    this.userId,
+    this.userName,
+    this.userEmail,
+    this.userPassword,
+    this.userPhone,
+    this.userAddress,
+    this.userImage,
+  });
 
-  User.fromJson(Map<String, dynamic> json) {  //named constructor to create a user object from json
-    userId = json['worker_id'];
+  User.fromJson(Map<String, dynamic> json) {
+    userId = json['worker_id']?.toString();
     userName = json['full_name'];
     userEmail = json['email'];
     userPassword = json['password'];
     userPhone = json['phone'];
     userAddress = json['address'];
+    userImage = json['image'];
   }
 
-  Map<String, dynamic> toJson() { //convert the user object into a JSON map
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['worker_id'] = userId;
-    data['full_name'] = userName;
-    data['email'] = userEmail;
-    data['password'] = userPassword;
-    data['phone'] = userPhone;
-    data['address'] = userAddress;
-    return data;
-  }
+  Map<String, dynamic> toJson() => {
+        'worker_id': userId,
+        'full_name': userName,
+        'email': userEmail,
+        'password': userPassword,
+        'phone': userPhone,
+        'address': userAddress,
+        'image': userImage,
+      };
 }

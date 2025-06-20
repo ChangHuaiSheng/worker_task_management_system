@@ -3,82 +3,62 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:worker_task_management_system/view/loginscreen.dart';
 import 'package:worker_task_management_system/view/profilepage.dart';
-import 'package:worker_task_management_system/view/submissionhistoryscreen.dart';
+import 'package:worker_task_management_system/view/tasklistpage.dart';
+import 'package:worker_task_management_system/view/editsubmission.dart';
 import 'package:worker_task_management_system/view/mainscreen.dart';
-import 'package:worker_task_management_system/view/submittaskpage.dart';
 import 'package:worker_task_management_system/model/user.dart';
-import 'package:worker_task_management_system/model/work.dart';
 import 'package:worker_task_management_system/myconfig.dart';
 
-class TaskListPage extends StatefulWidget {
+class SubmissionHistoryScreen extends StatefulWidget {
   final User user;
 
-  const TaskListPage({Key? key, required this.user}) : super(key: key);
+  const SubmissionHistoryScreen({super.key, required this.user});
 
   @override
-  _TaskListPageState createState() => _TaskListPageState();
+  State<SubmissionHistoryScreen> createState() => _SubmissionHistoryScreenState();
 }
 
-class _TaskListPageState extends State<TaskListPage> {
-  List<dynamic> tasks = [];
-  bool isLoading = true;
-  int _currentIndex = 1;
+class _SubmissionHistoryScreenState extends State<SubmissionHistoryScreen> {
+  List<Map<String, dynamic>> submissions = [];
+  bool loading = true;
+  int _currentIndex = 2;
 
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    _loadSubmissions(); // Load submission data on screen load
   }
 
-  void _loadTasks() async {
-    final userId = widget.user.userId;
-
-    if (userId == null || userId == '0') {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid user ID. Cannot load tasks.',
-                style: TextStyle(color: Colors.white)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      });
-      setState(() {
-        isLoading = false;
-      });
+  // Loads submission history from the server
+  void _loadSubmissions() async {
+    final workerId = widget.user.userId ?? "";
+    if (workerId.isEmpty) {
+      setState(() => loading = false);
       return;
     }
 
     try {
-      final response = await http.post(
-        Uri.parse("${MyConfig.myurl}/wtms/php/get_works.php"),
-        body: {'worker_id': userId},
+      final res = await http.post(
+        Uri.parse("${MyConfig.myurl}/wtms/php/get_submissions.php"),
+        body: {"worker_id": workerId},
       );
 
-      if (response.statusCode == 200) {
-        final decoded = json.decode(response.body);
+      final jsondata = jsonDecode(res.body);
+      if (jsondata['status'] == 'success') {
         setState(() {
-          tasks = decoded is List ? decoded : [];
-          isLoading = false;
+          submissions = List<Map<String, dynamic>>.from(jsondata['data']);
+          loading = false;
         });
       } else {
-        throw Exception('Failed to load tasks. Status code: ${response.statusCode}');
+        setState(() => loading = false);
       }
     } catch (e) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      });
-      setState(() {
-        isLoading = false;
-      });
+      print("Submission error: $e");
+      setState(() => loading = false);
     }
   }
 
+  // Handle bottom navigation bar tab switching
   void _navigateTo(int index) {
     Widget page;
     switch (index) {
@@ -97,15 +77,12 @@ class _TaskListPageState extends State<TaskListPage> {
       default:
         return;
     }
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => page),
-    );
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => page));
   }
 
   @override
   Widget build(BuildContext context) {
+    // Prepare profile image for drawer header
     ImageProvider<Object> profileImage;
     if (widget.user.userImage != null && widget.user.userImage!.isNotEmpty) {
       try {
@@ -119,7 +96,7 @@ class _TaskListPageState extends State<TaskListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Tasks', style: TextStyle(color: Colors.white)),
+        title: const Text("Submission History", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 52, 119, 219),
         iconTheme: const IconThemeData(color: Colors.white),
         leading: Builder(
@@ -129,6 +106,8 @@ class _TaskListPageState extends State<TaskListPage> {
           ),
         ),
       ),
+
+      // Drawer navigation with profile and links to pages
       drawer: Drawer(
         child: Column(
           children: [
@@ -161,16 +140,17 @@ class _TaskListPageState extends State<TaskListPage> {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainScreen(user: widget.user)));
             }),
             _buildDrawerItem(Icons.assignment, "Tasks", () {
-              Navigator.pop(context);
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => TaskListPage(user: widget.user)));
             }),
             _buildDrawerItem(Icons.history, "Submission History", () {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SubmissionHistoryScreen(user: widget.user)));
+              Navigator.pop(context);
             }),
             _buildDrawerItem(Icons.person, "Profile", () {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ProfilePage(user: widget.user)));
             }),
             const Spacer(),
             const Divider(),
+            // Logout with confirmation dialog
             _buildDrawerItem(Icons.logout, "Logout", () {
               showDialog(
                 context: context,
@@ -180,7 +160,7 @@ class _TaskListPageState extends State<TaskListPage> {
                   actions: [
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).pop(); // close dialog
+                        Navigator.of(context).pop();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -199,41 +179,31 @@ class _TaskListPageState extends State<TaskListPage> {
           ],
         ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : tasks.isEmpty
-              ? const Center(child: Text("No tasks found."))
-              : ListView.builder(
-                  itemCount: tasks.length,
-                  padding: const EdgeInsets.all(10),
-                  itemBuilder: (context, index) {
-                    final taskMap = tasks[index];
-                    final workTask = Work.fromJson(taskMap);
-                    final isCompleted = workTask.status == 'success' || workTask.status == 'completed';
 
+      // Display loading, empty message, or submission list
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : submissions.isEmpty
+              ? const Center(child: Text("No submissions found."))
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemCount: submissions.length,
+                  itemBuilder: (context, index) {
+                    var s = submissions[index];
                     return Card(
-                      elevation: 3,
-                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      color: isCompleted ? const Color(0xFFE0E0E0) : Colors.white,
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(16),
                         title: Row(
                           children: [
-                            Icon(
-                              isCompleted ? Icons.task : Icons.insert_drive_file,
-                              color: Colors.blue,
-                            ),
+                            const Icon(Icons.description, color: Color(0xFF3477DB)),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                workTask.title ?? 'No Title',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: isCompleted ? Colors.grey : Colors.black,
-                                ),
+                                s['title'] ?? 'No Title',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ],
@@ -241,45 +211,33 @@ class _TaskListPageState extends State<TaskListPage> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 8),
-                            Text(workTask.description ?? 'No Description'),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                                const SizedBox(width: 6),
+                                Text("Submitted: ${s['submitted_at'] ?? ''}", style: const TextStyle(fontSize: 13)),
+                              ],
+                            ),
                             const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.date_range, size: 16, color: Colors.grey),
-                                const SizedBox(width: 4),
-                                Text("Due: ${workTask.dueDate ?? 'N/A'}"),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                const Icon(Icons.info_outline, size: 16, color: Colors.grey),
-                                const SizedBox(width: 4),
-                                Text("Status: ${workTask.status ?? 'unknown'}"),
-                              ],
-                            ),
+                            Text(s['submission_text'] ?? '', style: const TextStyle(fontSize: 14)),
                           ],
                         ),
-                        onTap: isCompleted
-                            ? null
-                            : () async {
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => SubmitTaskPage(
-                                      user: widget.user,
-                                      task: workTask,
-                                    ),
-                                  ),
-                                );
-                                if (result == true) {
-                                  _loadTasks();
-                                }
-                              },
+                        // Tap to edit submission
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => EditSubmissionScreen(submission: s)),
+                          ).then((value) {
+                            if (value == true) _loadSubmissions(); // reload after edit
+                          });
+                        },
                       ),
                     );
                   },
                 ),
+
+      // Bottom navigation bar
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         selectedItemColor: const Color(0xFF3477DB),
@@ -295,6 +253,7 @@ class _TaskListPageState extends State<TaskListPage> {
     );
   }
 
+  // Drawer item builder helper
   Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap,
       {Color iconColor = Colors.black, Color textColor = Colors.black}) {
     return ListTile(

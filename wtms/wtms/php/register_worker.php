@@ -1,42 +1,44 @@
 <?php
 error_reporting(0);
-header("Access-Control-Allow-Origin: *"); // running as chrome app
+header("Access-Control-Allow-Origin: *");
 
-if (!isset($_POST)) {  //check if POST data is set, return failure if it is not set
-	$response = array('status' => 'failed', 'data' => null);
-    sendJsonResponse($response);
-    die;
-}
-
-include_once("dbconnect.php"); //include database connection
-
-$name = $_POST['name'];  //retrieve registration data from POST request
-$email = $_POST['email'];
-$password = sha1($_POST['password']);
-$phone = $_POST['phone'];
-$address = $_POST['address'];
-
-$sqlinsert="INSERT INTO `tbl_users`(`full_name`, `email`, `password`, `phone`, `address`) VALUES ('$name','$email','$password','$phone','$address')";
-
-try{ //try and catch for error
-    if ($conn->query($sqlinsert) === TRUE) {
-        $response = array('status' => 'success', 'data' => null);
-        sendJsonResponse($response);
-    } else {
-        $response = array('status' => 'failed', 'data' => null);
-        sendJsonResponse($response);
-    }   
-}catch (Exception $e) {
+if (!isset($_POST)) {
     $response = array('status' => 'failed', 'data' => null);
     sendJsonResponse($response);
     die;
 }
-	
 
-function sendJsonResponse($sentArray) //function to send JSON response to client
+include_once("dbconnect.php");
+
+$name = $_POST['name'];
+$email = $_POST['email'];
+$password = sha1($_POST['password']);
+$phone = $_POST['phone'];
+$address = $_POST['address'];
+$image = isset($_POST['image']) ? $_POST['image'] : null;
+
+$sqlinsert = "INSERT INTO workers (full_name, email, password, phone, address, image)
+              VALUES (?, ?, ?, ?, ?, ?)";
+
+try {
+    $stmt = $conn->prepare($sqlinsert);
+    $stmt->bind_param("ssssss", $name, $email, $password, $phone, $address, $image);
+
+    if ($stmt->execute()) {
+        $response = array('status' => 'success', 'data' => null);
+    } else {
+        $response = array('status' => 'failed', 'data' => null);
+    }
+    $stmt->close();
+    sendJsonResponse($response);
+} catch (Exception $e) {
+    $response = array('status' => 'failed', 'data' => null);
+    sendJsonResponse($response);
+}
+
+function sendJsonResponse($sentArray)
 {
     header('Content-Type: application/json');
     echo json_encode($sentArray);
 }
-
 ?>

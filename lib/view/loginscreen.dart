@@ -21,7 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     loadCredentials(); // load stored credentials if any
   }
@@ -30,42 +29,38 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Login Screen",style: TextStyle(color: Colors.white),),
+        title: const Text("Login Screen", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 52, 119, 219),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
-          child: Column(
-        children: [
-          Image.asset(
-            "assets/images/wtms.png", //app logo
-            height: 200,
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Card(
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: emailController,
-                      decoration: const InputDecoration( //input fields
-                        labelText: "Email",
+        child: Column(
+          children: [
+            Image.asset(
+              "assets/images/wtms.png",
+              height: 200,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Card(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: emailController,
+                        decoration: const InputDecoration(labelText: "Email"),
+                        keyboardType: TextInputType.emailAddress,
                       ),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    TextField(
-                      controller: passwordController,
-                      decoration: const InputDecoration(
-                        labelText: "Password",
+                      TextField(
+                        controller: passwordController,
+                        decoration: const InputDecoration(labelText: "Password"),
+                        obscureText: true,
                       ),
-                      obscureText: true,
-                    ),
-                    Row(
-                      children: [
-                        const Text("Remember Me"),
-                        Checkbox(
+                      Row(
+                        children: [
+                          const Text("Remember Me"),
+                          Checkbox(
                             value: isChecked,
                             onChanged: (value) {
                               setState(() {
@@ -75,8 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               String password = passwordController.text;
                               if (isChecked) {
                                 if (email.isEmpty && password.isEmpty) {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(const SnackBar(
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                                     content: Text("Please fill all fields"),
                                     backgroundColor: Colors.red,
                                   ));
@@ -85,36 +79,39 @@ class _LoginScreenState extends State<LoginScreen> {
                                 }
                               }
                               storeCredentials(email, password, isChecked);
-                            }),
-                      ],
-                    ),
-                    ElevatedButton( //login button
+                            },
+                          ),
+                        ],
+                      ),
+                      ElevatedButton(
                         onPressed: () {
-                          loginUser(); //trigger login process
+                          loginUser();
                         },
-                        child: const Text("Login"))
-                  ],
+                        child: const Text("Login"),
+                      )
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          GestureDetector(  //navigate to register screen
+            GestureDetector(
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => const RegisterScreen()),
+                  MaterialPageRoute(builder: (context) => const RegisterScreen()),
                 );
               },
-              child: const Text("Register an account?")),
-          const SizedBox(height: 10),
-          GestureDetector(onTap: () {}, child: const Text("Forgot Password?")),
-        ],
-      )),
+              child: const Text("Register an account?"),
+            ),
+            const SizedBox(height: 10),
+            GestureDetector(onTap: () {}, child: const Text("Forgot Password?")),
+          ],
+        ),
+      ),
     );
   }
 
-  void loginUser() { //login user by calling PHP API
+  void loginUser() {
     String email = emailController.text;
     String password = passwordController.text;
 
@@ -125,30 +122,25 @@ class _LoginScreenState extends State<LoginScreen> {
       ));
       return;
     }
+
     http.post(Uri.parse("${MyConfig.myurl}/wtms/php/login_worker.php"), body: {
-      "email": email, //Send HTTP POST request to backend
+      "email": email,
       "password": password,
     }).then((response) {
-        print(response.body);
       if (response.statusCode == 200) {
         var jsondata = json.decode(response.body);
         if (jsondata['status'] == 'success') {
           var userdata = jsondata['data'];
-          User user = User.fromJson(userdata[0]); //create user model from JSON
-          print(user.userName);
+          User user = User.fromJson(userdata[0]);
 
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content:
-                Text("Welcome ${user.userName}"),
+            content: Text("Welcome ${user.userName}"),
             backgroundColor: Colors.green,
           ));
-          Navigator.of(context).pop();  //close login screen
+
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-                builder: (context) => MainScreen(
-                      user: user,
-                    )),
+            MaterialPageRoute(builder: (context) => MainScreen(user: user)),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -156,12 +148,21 @@ class _LoginScreenState extends State<LoginScreen> {
             backgroundColor: Colors.red,
           ));
         }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("Server Error"),
+          backgroundColor: Colors.red,
+        ));
       }
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Error: $error"),
+        backgroundColor: Colors.red,
+      ));
     });
   }
 
-  Future<void> storeCredentials( //store credentials using shared pref
-      String email, String password, bool isChecked) async {
+  Future<void> storeCredentials(String email, String password, bool isChecked) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (isChecked) {
       await prefs.setString('email', email);
@@ -171,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
         content: Text("Pref Stored Success!"),
         backgroundColor: Colors.green,
       ));
-    } else { //remove saved credentials
+    } else {
       await prefs.remove('email');
       await prefs.remove('pass');
       await prefs.remove('remember');
@@ -185,22 +186,23 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> loadCredentials() async { //load saved credentials when the screen is initialized
+  Future<void> loadCredentials() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? email = prefs.getString('email');
     String? password = prefs.getString('pass');
-    bool? isChecked = prefs.getBool('remember');
-    if (email != null && password != null && isChecked != null) {
+    bool? remembered = prefs.getBool('remember');
+    if (email != null && password != null && remembered != null) {
       emailController.text = email;
       passwordController.text = password;
       setState(() {
-        this.isChecked = isChecked!;
+        isChecked = remembered;
       });
     } else {
       emailController.clear();
       passwordController.clear();
-      isChecked = false;
-      setState(() {});
+      setState(() {
+        isChecked = false;
+      });
     }
   }
 }
