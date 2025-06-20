@@ -4,7 +4,9 @@ Name : Chang Huai Sheng
 Matric No : 297670
 
 # worker_task_management_system
-This is the worker task management system for Individual Assignment 2
+This is the worker task management system for Individual Assignment 2 (Assignment 2 is in branch now, main is for midterm assignment worker task completion system phase 2)
+
+This is the worker task completion system phase 2.
 
 # Database Setup for XAMPP
 After starting XAMPP, go to XAMPP Control Panel and get the IPV4 Address, copy the IP address and paste it in the url in myconfig.dart (Take note that different connection have different IP address so you have to check it everytime)
